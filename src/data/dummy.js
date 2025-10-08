@@ -1,0 +1,120 @@
+const roles = [
+  { id: "role-1", name: "Admin" },
+  { id: "role-2", name: "User" },
+];
+
+const branches = [
+  { id: "branch-1", name: "Jakarta" },
+  { id: "branch-2", name: "Bandung" },
+];
+
+const users = [
+  {
+    id: "user-1",
+    username: "janedoe",
+    full_name: "Jane Doe",
+    email: "jane@example.com",
+    role_id: "role-1",
+    role_name: "Admin",
+    is_active: true,
+    branches: [{ branch_id: "branch-1" }],
+  },
+];
+
+const accounts = [
+  { id: "acc-1", name: "Kas Besar", type: "kas", is_active: true },
+  { id: "acc-2", name: "Bank BCA", type: "bank", is_active: true },
+  { id: "acc-3", name: "Bank Mandiri", type: "bank", is_active: true },
+  { id: "acc-4", name: "Kas Kecil", type: "kas", is_active: true },
+  {
+    id: "acc-5",
+    name: "Pendapatan Penjualan",
+    type: "pendapatan",
+    is_active: true,
+  },
+];
+
+const omzet = [
+  {
+    id: "omzet-1",
+    transaction_date: "08-10-2025",
+    transaction_type: "Pemasukan",
+    reference_no: "OMZ-001-2025",
+    branch_id: "branch-1",
+    branch_name: "Jakarta",
+    account_id: "acc-5",
+    account_name: "Pendapatan Penjualan",
+    notes: "Penjualan produk bulan Oktober",
+    total_amount: 5000000,
+    status: "active",
+    file: null,
+    created_at: "2025-10-08T10:00:00Z",
+    updated_at: "2025-10-08T10:00:00Z",
+  },
+  {
+    id: "omzet-2",
+    transaction_date: "07-10-2025",
+    transaction_type: "Pemasukan",
+    reference_no: "OMZ-002-2025",
+    branch_id: "branch-2",
+    branch_name: "Bandung",
+    account_id: "acc-5",
+    account_name: "Pendapatan Penjualan",
+    notes: "Penjualan produk bulan Oktober - Bandung",
+    total_amount: 3500000,
+    status: "active",
+    file: null,
+    created_at: "2025-10-07T14:30:00Z",
+    updated_at: "2025-10-07T14:30:00Z",
+  },
+  {
+    id: "omzet-3",
+    transaction_date: "06-10-2025",
+    transaction_type: "Pemasukan",
+    reference_no: "OMZ-003-2025",
+    branch_id: "branch-1",
+    branch_name: "Jakarta",
+    account_id: "acc-1",
+    account_name: "Kas Besar",
+    notes: "Setoran tunai dari penjualan",
+    total_amount: 2750000,
+    status: "active",
+    file: null,
+    created_at: "2025-10-06T16:45:00Z",
+    updated_at: "2025-10-06T16:45:00Z",
+  },
+  {
+    id: "omzet-4",
+    transaction_date: "05-10-2025",
+    transaction_type: "Pengeluaran",
+    reference_no: "OMZ-004-2025",
+    branch_id: "branch-1",
+    branch_name: "Jakarta",
+    account_id: "acc-2",
+    account_name: "Bank BCA",
+    notes: "Pembayaran supplier bahan baku",
+    total_amount: 1500000,
+    status: "active",
+    file: null,
+    created_at: "2025-10-05T09:15:00Z",
+    updated_at: "2025-10-05T09:15:00Z",
+  },
+  {
+    id: "omzet-5",
+    transaction_date: "04-10-2025",
+    transaction_type: "Pemasukan",
+    reference_no: "OMZ-005-2025",
+    branch_id: "branch-2",
+    branch_name: "Bandung",
+    account_id: "acc-3",
+    account_name: "Bank Mandiri",
+    notes: "Transfer dari klien corporate",
+    total_amount: 8000000,
+    status: "active",
+    file: "invoice_klien_corporate.pdf",
+    created_at: "2025-10-04T11:20:00Z",
+    updated_at: "2025-10-04T11:20:00Z",
+  },
+];
+
+module.exports = { roles, branches, users, accounts, omzet };
