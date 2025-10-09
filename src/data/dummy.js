@@ -34,6 +34,54 @@ const accounts = [
   },
 ];
 
+const coa = [
+  {
+    account_id: "coa-1",
+    account_code: "COA-001",
+    account_name: "Kas Besar",
+    account_type: "Aktiva",
+    is_active: true,
+    created_at: "2025-10-01T10:00:00Z",
+    updated_at: "2025-10-01T10:00:00Z",
+  },
+  {
+    account_id: "coa-2",
+    account_code: "COA-002",
+    account_name: "Bank BCA",
+    account_type: "Aktiva",
+    is_active: true,
+    created_at: "2025-10-01T10:00:00Z",
+    updated_at: "2025-10-01T10:00:00Z",
+  },
+  {
+    account_id: "coa-3",
+    account_code: "COA-003",
+    account_name: "Pendapatan Penjualan",
+    account_type: "Omzet",
+    is_active: true,
+    created_at: "2025-10-01T10:00:00Z",
+    updated_at: "2025-10-01T10:00:00Z",
+  },
+  {
+    account_id: "coa-4",
+    account_code: "COA-004",
+    account_name: "Beban Gaji",
+    account_type: "Beban",
+    is_active: true,
+    created_at: "2025-10-01T10:00:00Z",
+    updated_at: "2025-10-01T10:00:00Z",
+  },
+  {
+    account_id: "coa-5",
+    account_code: "COA-005",
+    account_name: "Hutang Usaha",
+    account_type: "Kewajiban",
+    is_active: true,
+    created_at: "2025-10-01T10:00:00Z",
+    updated_at: "2025-10-01T10:00:00Z",
+  },
+];
+
 const omzet = [
   {
     id: "omzet-1",
@@ -117,4 +165,4 @@ const omzet = [
   },
 ];
 
-module.exports = { roles, branches, users, accounts, omzet };
+module.exports = { roles, branches, users, accounts, omzet, coa };

@@ -22,7 +22,12 @@ router.get("/home", authMiddleware, (req, res) => {
               menu_name: "Transactions",
               path: "/transactions",
             },
-            { menu_id: "menu-3", menu_name: "Users Managment", path: "/users" },
+            {
+              menu_id: "menu-3",
+              menu_name: "Omzet",
+              path: "/omzet",
+            },
+            { menu_id: "menu-4", menu_name: "Users Managment", path: "/users" },
           ],
           role_access: ["C", "R", "U", "D"],
         },
