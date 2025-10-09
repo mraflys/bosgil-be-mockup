@@ -1,6 +1,6 @@
 const express = require("express");
 const { authMiddleware } = require("../middleware/auth");
-const { omzet, accounts, branches } = require("../data/dummy");
+const { omzet, accounts, branches, coa } = require("../data/dummy");
 
 const router = express.Router();
 
@@ -134,7 +134,7 @@ router.post("/omzet", authMiddleware, (req, res) => {
     }
 
     // Validate account exists
-    const account = accounts.find((a) => a.id === account_id && a.is_active);
+    const account = coa.find((a) => a.account_id === account_id && a.is_active);
     if (!account) {
       return res.status(400).json({
         code: 400,
@@ -268,7 +268,9 @@ router.patch("/omzet/:id", authMiddleware, (req, res) => {
     }
 
     if (account_id) {
-      const account = accounts.find((a) => a.id === account_id && a.is_active);
+      const account = coa.find(
+        (a) => a.account_id == account_id && a.is_active
+      );
       if (!account) {
         return res.status(400).json({
           code: 400,
