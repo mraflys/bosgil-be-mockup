@@ -27,7 +27,12 @@ router.get("/home", authMiddleware, (req, res) => {
               menu_name: "Omzet",
               path: "/omzet",
             },
-            { menu_id: "menu-4", menu_name: "Users Managment", path: "/users" },
+            {
+              menu_id: "menu-4",
+              menu_name: "Expense",
+              path: "/expense",
+            },
+            { menu_id: "menu-5", menu_name: "Users Managment", path: "/users" },
           ],
           role_access: ["C", "R", "U", "D"],
         },

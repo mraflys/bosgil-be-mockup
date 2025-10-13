@@ -6,6 +6,7 @@ const homeRoute = require("./routes/home");
 const userRoute = require("./routes/users");
 const omzetRoute = require("./routes/omzet");
 const coaRoute = require("./routes/coa");
+const pengeluaranRoute = require("./routes/pengeluaran");
 
 const app = express();
 app.use(cors()); // Tambahkan ini untuk mengizinkan semua origin
@@ -16,6 +17,7 @@ app.use("/api", homeRoute);
 app.use("/api", userRoute);
 app.use("/api", omzetRoute);
 app.use("/api", coaRoute);
+app.use("/api", pengeluaranRoute);
 
 // Global error handler (optional)
 app.use((err, req, res, next) => {

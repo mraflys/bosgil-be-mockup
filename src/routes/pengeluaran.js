@@ -1,82 +1,24 @@
 const express = require("express");
 const { authMiddleware } = require("../middleware/auth");
-const { omzet, accounts, branches, coa } = require("../data/dummy");
+const { omzet, branches, coa } = require("../data/dummy");
 
 const router = express.Router();
 
-// GET /api/omzet - Read All Omzet
-router.get("/omzet", authMiddleware, (req, res) => {
+// GET /api/pengeluaran - Read All Pengeluaran
+router.get("/pengeluaran", authMiddleware, (req, res) => {
   try {
-    const { search, transaction_type, start_date, end_date, account_id, branch_id } = req.query;
+    const { search, start_date, end_date, account_id, branch_id } = req.query;
 
-    let filteredOmzet = omzet.filter((item) => item.status === "active");
-
-    // Transaction type filter
-    if (transaction_type) {
-      filteredOmzet = filteredOmzet.filter(item => item.transaction_type === transaction_type);
-    }
-
-    // Account filter
-    if (account_id) {
-      filteredOmzet = filteredOmzet.filter(item => item.account_id === account_id);
-    }
-
-    // Branch filter
-    if (branch_id) {
-      filteredOmzet = filteredOmzet.filter(item => item.branch_id === branch_id);
-    }
-
-    // Date range filter
-    if (start_date || end_date) {
-      filteredOmzet = filteredOmzet.filter(item => {
-        // Convert DD-MM-YYYY to YYYY-MM-DD for comparison
-        const [day, month, year] = item.transaction_date.split('-');
-        const itemDate = new Date(`${year}-${month}-${day}`);
-        
-        let isInRange = true;
-        
-        if (start_date) {
-          // Assuming start_date format is DD-MM-YYYY or ddmmyyyy
-          let startDateObj;
-          if (start_date.includes('-')) {
-            // DD-MM-YYYY format
-            const [startDay, startMonth, startYear] = start_date.split('-');
-            startDateObj = new Date(`${startYear}-${startMonth}-${startDay}`);
-          } else {
-            // ddmmyyyy format
-            const startDay = start_date.substring(0, 2);
-            const startMonth = start_date.substring(2, 4);
-            const startYear = start_date.substring(4, 8);
-            startDateObj = new Date(`${startYear}-${startMonth}-${startDay}`);
-          }
-          isInRange = isInRange && itemDate >= startDateObj;
-        }
-        
-        if (end_date) {
-          // Assuming end_date format is DD-MM-YYYY or ddmmyyyy
-          let endDateObj;
-          if (end_date.includes('-')) {
-            // DD-MM-YYYY format
-            const [endDay, endMonth, endYear] = end_date.split('-');
-            endDateObj = new Date(`${endYear}-${endMonth}-${endDay}`);
-          } else {
-            // ddmmyyyy format
-            const endDay = end_date.substring(0, 2);
-            const endMonth = end_date.substring(2, 4);
-            const endYear = end_date.substring(4, 8);
-            endDateObj = new Date(`${endYear}-${endMonth}-${endDay}`);
-          }
-          isInRange = isInRange && itemDate <= endDateObj;
-        }
-        
-        return isInRange;
-      });
-    }
+    // Filter only "Pengeluaran" transactions
+    let filteredPengeluaran = omzet.filter(
+      (item) =>
+        item.status === "active" && item.transaction_type === "Pengeluaran"
+    );
 
     // Search functionality
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredOmzet = filteredOmzet.filter(
+      filteredPengeluaran = filteredPengeluaran.filter(
         (item) =>
           item.reference_no.toLowerCase().includes(searchLower) ||
           item.notes.toLowerCase().includes(searchLower) ||
@@ -85,46 +27,79 @@ router.get("/omzet", authMiddleware, (req, res) => {
       );
     }
 
-    // Sort by created_at desc
-    filteredOmzet.sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at)
-    );
+    // Date range filter
+    if (start_date || end_date) {
+      filteredPengeluaran = filteredPengeluaran.filter((item) => {
+        // Convert DD-MM-YYYY to YYYY-MM-DD for comparison
+        const [day, month, year] = item.transaction_date.split("-");
+        const itemDate = new Date(`${year}-${month}-${day}`);
 
-    res.status(200).json({
-      code: 200,
-      message: "Success get omzet data",
-      data: filteredOmzet,
-      total: filteredOmzet.length,
-    });
-  } catch (error) {
-    res.status(500).json({
-      code: 500,
-      error: "Internal server error",
-      message: error.message,
-    });
-  }
-});
+        let isInRange = true;
 
-// GET /api/omzet/:id - Read One Omzet
-router.get("/omzet/:id", authMiddleware, (req, res) => {
-  try {
-    const { id } = req.params;
+        if (start_date) {
+          // Assuming start_date format is ddmmyyyy
+          const startDay = start_date.substring(0, 2);
+          const startMonth = start_date.substring(2, 4);
+          const startYear = start_date.substring(4, 8);
+          const startDateObj = new Date(
+            `${startYear}-${startMonth}-${startDay}`
+          );
+          isInRange = isInRange && itemDate >= startDateObj;
+        }
 
-    const omzetItem = omzet.find(
-      (item) => item.id === id && item.status === "active"
-    );
+        if (end_date) {
+          // Assuming end_date format is ddmmyyyy
+          const endDay = end_date.substring(0, 2);
+          const endMonth = end_date.substring(2, 4);
+          const endYear = end_date.substring(4, 8);
+          const endDateObj = new Date(`${endYear}-${endMonth}-${endDay}`);
+          isInRange = isInRange && itemDate <= endDateObj;
+        }
 
-    if (!omzetItem) {
-      return res.status(404).json({
-        code: 404,
-        error: "Omzet not found",
+        return isInRange;
       });
     }
 
+    // Account filter
+    if (account_id) {
+      filteredPengeluaran = filteredPengeluaran.filter(
+        (item) => item.account_id === account_id
+      );
+    }
+
+    // Branch filter
+    if (branch_id) {
+      filteredPengeluaran = filteredPengeluaran.filter(
+        (item) => item.branch_id === branch_id
+      );
+    }
+
+    // Sort by created_at desc
+    filteredPengeluaran.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+
+    // Format response to match expected structure
+    const responseData = filteredPengeluaran.map((item) => ({
+      transaction_id: item.id,
+      transaction_date: item.transaction_date.replace(/-/g, "/"), // Convert to DD/MM/YYYY
+      transaction_type: item.transaction_type,
+      reference_no: item.reference_no,
+      notes: item.notes,
+      total_amount: item.total_amount,
+      status: "Approved", // Default status for pengeluaran
+      branch_id: item.branch_id,
+      branch_name: item.branch_name,
+      account_id: item.account_id,
+      account_code: item.account_code,
+      account_name: item.account_name,
+    }));
+
     res.status(200).json({
       code: 200,
-      message: "Success get omzet detail",
-      data: omzetItem,
+      message: "Successfully retrieved Expense data.",
+      data: responseData,
+      total: responseData.length,
     });
   } catch (error) {
     res.status(500).json({
@@ -135,8 +110,57 @@ router.get("/omzet/:id", authMiddleware, (req, res) => {
   }
 });
 
-// POST /api/omzet - Create Omzet
-router.post("/omzet", authMiddleware, (req, res) => {
+// GET /api/pengeluaran/:id - Read One Pengeluaran
+router.get("/pengeluaran/:id", authMiddleware, (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pengeluaranItem = omzet.find(
+      (item) =>
+        item.id === id &&
+        item.status === "active" &&
+        item.transaction_type === "Pengeluaran"
+    );
+
+    if (!pengeluaranItem) {
+      return res.status(404).json({
+        code: 404,
+        error: "Expense not found",
+      });
+    }
+
+    // Format response
+    const responseData = {
+      transaction_id: pengeluaranItem.id,
+      transaction_date: pengeluaranItem.transaction_date.replace(/-/g, "/"), // Convert to DD/MM/YYYY
+      transaction_type: pengeluaranItem.transaction_type,
+      reference_no: pengeluaranItem.reference_no,
+      notes: pengeluaranItem.notes,
+      total_amount: pengeluaranItem.total_amount,
+      status: "Approved", // Default status for pengeluaran
+      branch_id: pengeluaranItem.branch_id,
+      branch_name: pengeluaranItem.branch_name,
+      account_id: pengeluaranItem.account_id,
+      account_code: pengeluaranItem.account_code,
+      account_name: pengeluaranItem.account_name,
+    };
+
+    res.status(200).json({
+      code: 200,
+      message: "Successfully retrieved Expense data.",
+      data: responseData,
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      error: "Internal server error",
+      message: error.message,
+    });
+  }
+});
+
+// POST /api/pengeluaran - Create Pengeluaran
+router.post("/pengeluaran", authMiddleware, (req, res) => {
   try {
     const {
       transaction_date,
@@ -176,12 +200,12 @@ router.post("/omzet", authMiddleware, (req, res) => {
       });
     }
 
-    // Validate transaction_type
-    if (!["Pemasukan", "Pengeluaran"].includes(transaction_type)) {
+    // Validate transaction_type for pengeluaran
+    if (!["Operasional", "Bahan Baku"].includes(transaction_type)) {
       return res.status(400).json({
         code: 400,
         error: "Invalid transaction type",
-        message: "transaction_type must be 'Pemasukan' or 'Pengeluaran'",
+        message: "transaction_type must be 'Operasional' or 'Bahan Baku'",
       });
     }
 
@@ -195,7 +219,7 @@ router.post("/omzet", authMiddleware, (req, res) => {
       });
     }
 
-    // Validate account exists
+    // Validate account exists in COA
     const account = coa.find((a) => a.account_id === account_id && a.is_active);
     if (!account) {
       return res.status(400).json({
@@ -230,11 +254,11 @@ router.post("/omzet", authMiddleware, (req, res) => {
     const newId = `omzet-${omzet.length + 1}`;
     const currentTimestamp = new Date().toISOString();
 
-    // Create new omzet
-    const newOmzet = {
+    // Create new pengeluaran (saved as omzet with transaction_type = "Pengeluaran")
+    const newPengeluaran = {
       id: newId,
       transaction_date,
-      transaction_type,
+      transaction_type: "Pengeluaran", // Force to Pengeluaran for consistency
       reference_no,
       branch_id,
       branch_name: branch.name,
@@ -250,12 +274,12 @@ router.post("/omzet", authMiddleware, (req, res) => {
     };
 
     // Add to omzet array (in real app, this would be saved to database)
-    omzet.push(newOmzet);
+    omzet.push(newPengeluaran);
 
-    res.status(201).json({
-      code: 201,
-      message: "Omzet created successfully",
-      data: newOmzet,
+    res.status(200).json({
+      code: 200,
+      message: `Expense ${newId} successfully created.`,
+      data: newPengeluaran,
     });
   } catch (error) {
     res.status(500).json({
@@ -266,8 +290,8 @@ router.post("/omzet", authMiddleware, (req, res) => {
   }
 });
 
-// PATCH /api/omzet/:id - Update Omzet
-router.patch("/omzet/:id", authMiddleware, (req, res) => {
+// PATCH /api/pengeluaran/:id - Update Pengeluaran
+router.patch("/pengeluaran/:id", authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -281,18 +305,21 @@ router.patch("/omzet/:id", authMiddleware, (req, res) => {
       file,
     } = req.body;
 
-    // Find omzet
+    // Find pengeluaran
     const omzetIndex = omzet.findIndex(
-      (item) => item.id === id && item.status === "active"
+      (item) =>
+        item.id === id &&
+        item.status === "active" &&
+        item.transaction_type === "Pengeluaran"
     );
     if (omzetIndex === -1) {
       return res.status(404).json({
         code: 404,
-        error: "Omzet not found",
+        error: "Expense not found",
       });
     }
 
-    const currentOmzet = omzet[omzetIndex];
+    const currentPengeluaran = omzet[omzetIndex];
 
     // Validate fields if provided
     if (transaction_date) {
@@ -308,12 +335,12 @@ router.patch("/omzet/:id", authMiddleware, (req, res) => {
 
     if (
       transaction_type &&
-      !["Pemasukan", "Pengeluaran"].includes(transaction_type)
+      !["Operasional", "Bahan Baku"].includes(transaction_type)
     ) {
       return res.status(400).json({
         code: 400,
         error: "Invalid transaction type",
-        message: "transaction_type must be 'Pemasukan' or 'Pengeluaran'",
+        message: "transaction_type must be 'Operasional' or 'Bahan Baku'",
       });
     }
 
@@ -326,13 +353,13 @@ router.patch("/omzet/:id", authMiddleware, (req, res) => {
           message: "Invalid branch_id",
         });
       }
-      currentOmzet.branch_id = branch_id;
-      currentOmzet.branch_name = branch.name;
+      currentPengeluaran.branch_id = branch_id;
+      currentPengeluaran.branch_name = branch.name;
     }
 
     if (account_id) {
       const account = coa.find(
-        (a) => a.account_id == account_id && a.is_active
+        (a) => a.account_id === account_id && a.is_active
       );
       if (!account) {
         return res.status(400).json({
@@ -341,9 +368,9 @@ router.patch("/omzet/:id", authMiddleware, (req, res) => {
           message: "Invalid account_id or account is inactive",
         });
       }
-      currentOmzet.account_id = account_id;
-      currentOmzet.account_code = account.account_code;
-      currentOmzet.account_name = account.account_name;
+      currentPengeluaran.account_id = account_id;
+      currentPengeluaran.account_code = account.account_code;
+      currentPengeluaran.account_name = account.account_name;
     }
 
     if (total_amount !== undefined) {
@@ -356,7 +383,7 @@ router.patch("/omzet/:id", authMiddleware, (req, res) => {
       }
     }
 
-    if (reference_no && reference_no !== currentOmzet.reference_no) {
+    if (reference_no && reference_no !== currentPengeluaran.reference_no) {
       const existingRef = omzet.find(
         (item) =>
           item.reference_no === reference_no &&
@@ -373,19 +400,21 @@ router.patch("/omzet/:id", authMiddleware, (req, res) => {
     }
 
     // Update fields
-    if (transaction_date) currentOmzet.transaction_date = transaction_date;
-    if (transaction_type) currentOmzet.transaction_type = transaction_type;
-    if (reference_no) currentOmzet.reference_no = reference_no;
-    if (notes !== undefined) currentOmzet.notes = notes;
-    if (total_amount !== undefined) currentOmzet.total_amount = total_amount;
-    if (file !== undefined) currentOmzet.file = file;
+    if (transaction_date)
+      currentPengeluaran.transaction_date = transaction_date;
+    if (transaction_type) currentPengeluaran.transaction_type = "Pengeluaran"; // Always keep as Pengeluaran
+    if (reference_no) currentPengeluaran.reference_no = reference_no;
+    if (notes !== undefined) currentPengeluaran.notes = notes;
+    if (total_amount !== undefined)
+      currentPengeluaran.total_amount = total_amount;
+    if (file !== undefined) currentPengeluaran.file = file;
 
-    currentOmzet.updated_at = new Date().toISOString();
+    currentPengeluaran.updated_at = new Date().toISOString();
 
     res.status(200).json({
       code: 200,
-      message: "Omzet updated successfully",
-      data: currentOmzet,
+      message: `Expense ${id} successfully updated.`,
+      data: currentPengeluaran,
     });
   } catch (error) {
     res.status(500).json({
@@ -396,19 +425,22 @@ router.patch("/omzet/:id", authMiddleware, (req, res) => {
   }
 });
 
-// DELETE /api/omzet/:id - Delete (Deactivate) Omzet
-router.delete("/omzet/:id", authMiddleware, (req, res) => {
+// DELETE /api/pengeluaran/:id - Delete (Deactivate) Pengeluaran
+router.delete("/pengeluaran/:id", authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find omzet
+    // Find pengeluaran
     const omzetIndex = omzet.findIndex(
-      (item) => item.id === id && item.status === "active"
+      (item) =>
+        item.id === id &&
+        item.status === "active" &&
+        item.transaction_type === "Pengeluaran"
     );
     if (omzetIndex === -1) {
       return res.status(404).json({
         code: 404,
-        error: "Omzet not found",
+        error: "Expense not found",
       });
     }
 
@@ -418,26 +450,7 @@ router.delete("/omzet/:id", authMiddleware, (req, res) => {
 
     res.status(200).json({
       code: 200,
-      message: "Omzet deleted successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      code: 500,
-      error: "Internal server error",
-      message: error.message,
-    });
-  }
-});
-
-// GET /api/accounts - Get all active accounts (helper endpoint)
-router.get("/accounts", authMiddleware, (req, res) => {
-  try {
-    const activeAccounts = accounts.filter((account) => account.is_active);
-
-    res.status(200).json({
-      code: 200,
-      message: "Success get accounts data",
-      data: activeAccounts,
+      message: `Expense ${id} successfully deactivated.`,
     });
   } catch (error) {
     res.status(500).json({
