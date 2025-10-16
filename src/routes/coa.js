@@ -39,9 +39,16 @@ router.get("/coa", authMiddleware, (req, res) => {
       );
     }
 
+    // Format dates to DD/MM/YYYY
+    const formattedData = filteredCoa.map((item) => ({
+      ...item,
+      created_at: new Date(item.created_at).toLocaleDateString("en-GB"), // DD/MM/YYYY format
+      updated_at: new Date(item.updated_at).toLocaleDateString("en-GB"), // DD/MM/YYYY format
+    }));
+
     res.json({
       code: 200,
-      data: filteredCoa,
+      data: formattedData,
       message: "Successfully retrieved COA data.",
     });
   } catch (error) {
@@ -98,9 +105,16 @@ router.get("/coa/:id", authMiddleware, (req, res) => {
       });
     }
 
+    // Format dates to DD/MM/YYYY
+    const formattedData = {
+      ...coaItem,
+      created_at: new Date(coaItem.created_at).toLocaleDateString("en-GB"), // DD/MM/YYYY format
+      updated_at: new Date(coaItem.updated_at).toLocaleDateString("en-GB"), // DD/MM/YYYY format
+    };
+
     res.json({
       code: 200,
-      data: coaItem,
+      data: formattedData,
       message: "Successfully retrieved COA data.",
     });
   } catch (error) {

@@ -12,7 +12,9 @@ router.get("/pengeluaran", authMiddleware, (req, res) => {
     // Filter only "Pengeluaran" transactions
     let filteredPengeluaran = omzet.filter(
       (item) =>
-        item.status === "active" && item.transaction_type === "Pengeluaran"
+        item.status === "active" &&
+        (item.transaction_type === "Bahan Baku" ||
+          item.transaction_type === "Operasional")
     );
 
     // Search functionality
@@ -37,22 +39,44 @@ router.get("/pengeluaran", authMiddleware, (req, res) => {
         let isInRange = true;
 
         if (start_date) {
-          // Assuming start_date format is ddmmyyyy
-          const startDay = start_date.substring(0, 2);
-          const startMonth = start_date.substring(2, 4);
-          const startYear = start_date.substring(4, 8);
-          const startDateObj = new Date(
-            `${startYear}-${startMonth}-${startDay}`
-          );
+          // Support multiple date formats: DD/MM/YYYY, DD-MM-YYYY, or ddmmyyyy
+          let startDateObj;
+          if (start_date.includes("/")) {
+            // DD/MM/YYYY format
+            const [startDay, startMonth, startYear] = start_date.split("/");
+            startDateObj = new Date(`${startYear}-${startMonth}-${startDay}`);
+          } else if (start_date.includes("-")) {
+            // DD-MM-YYYY format
+            const [startDay, startMonth, startYear] = start_date.split("-");
+            startDateObj = new Date(`${startYear}-${startMonth}-${startDay}`);
+          } else {
+            // ddmmyyyy format
+            const startDay = start_date.substring(0, 2);
+            const startMonth = start_date.substring(2, 4);
+            const startYear = start_date.substring(4, 8);
+            startDateObj = new Date(`${startYear}-${startMonth}-${startDay}`);
+          }
           isInRange = isInRange && itemDate >= startDateObj;
         }
 
         if (end_date) {
-          // Assuming end_date format is ddmmyyyy
-          const endDay = end_date.substring(0, 2);
-          const endMonth = end_date.substring(2, 4);
-          const endYear = end_date.substring(4, 8);
-          const endDateObj = new Date(`${endYear}-${endMonth}-${endDay}`);
+          // Support multiple date formats: DD/MM/YYYY, DD-MM-YYYY, or ddmmyyyy
+          let endDateObj;
+          if (end_date.includes("/")) {
+            // DD/MM/YYYY format
+            const [endDay, endMonth, endYear] = end_date.split("/");
+            endDateObj = new Date(`${endYear}-${endMonth}-${endDay}`);
+          } else if (end_date.includes("-")) {
+            // DD-MM-YYYY format
+            const [endDay, endMonth, endYear] = end_date.split("-");
+            endDateObj = new Date(`${endYear}-${endMonth}-${endDay}`);
+          } else {
+            // ddmmyyyy format
+            const endDay = end_date.substring(0, 2);
+            const endMonth = end_date.substring(2, 4);
+            const endYear = end_date.substring(4, 8);
+            endDateObj = new Date(`${endYear}-${endMonth}-${endDay}`);
+          }
           isInRange = isInRange && itemDate <= endDateObj;
         }
 
@@ -80,20 +104,26 @@ router.get("/pengeluaran", authMiddleware, (req, res) => {
     );
 
     // Format response to match expected structure
-    const responseData = filteredPengeluaran.map((item) => ({
-      transaction_id: item.id,
-      transaction_date: item.transaction_date.replace(/-/g, "/"), // Convert to DD/MM/YYYY
-      transaction_type: item.transaction_type,
-      reference_no: item.reference_no,
-      notes: item.notes,
-      total_amount: item.total_amount,
-      status: "Approved", // Default status for pengeluaran
-      branch_id: item.branch_id,
-      branch_name: item.branch_name,
-      account_id: item.account_id,
-      account_code: item.account_code,
-      account_name: item.account_name,
-    }));
+    const responseData = filteredPengeluaran.map((item) => {
+      // Convert DD-MM-YYYY to DD/MM/YYYY
+      const formattedDate = item.transaction_date.replace(/-/g, "/");
+
+      return {
+        transaction_id: item.id,
+        transaction_date: formattedDate,
+        transaction_type: item.transaction_type,
+        reference_no: item.reference_no,
+        notes: item.notes,
+        total_amount: item.total_amount,
+        status: "Approved", // Default status for pengeluaran
+        branch_id: item.branch_id,
+        branch_name: item.branch_name,
+        account_id: item.account_id,
+        account_code: item.account_code,
+        account_name: item.account_name,
+        files: item.files || [],
+      };
+    });
 
     res.status(200).json({
       code: 200,
@@ -119,7 +149,8 @@ router.get("/pengeluaran/:id", authMiddleware, (req, res) => {
       (item) =>
         item.id === id &&
         item.status === "active" &&
-        item.transaction_type === "Pengeluaran"
+        (item.transaction_type === "Bahan Baku" ||
+          item.transaction_type === "Operasional")
     );
 
     if (!pengeluaranItem) {
@@ -130,9 +161,12 @@ router.get("/pengeluaran/:id", authMiddleware, (req, res) => {
     }
 
     // Format response
+    // Convert DD-MM-YYYY to DD/MM/YYYY
+    const formattedDate = pengeluaranItem.transaction_date.replace(/-/g, "/");
+
     const responseData = {
       transaction_id: pengeluaranItem.id,
-      transaction_date: pengeluaranItem.transaction_date.replace(/-/g, "/"), // Convert to DD/MM/YYYY
+      transaction_date: formattedDate,
       transaction_type: pengeluaranItem.transaction_type,
       reference_no: pengeluaranItem.reference_no,
       notes: pengeluaranItem.notes,
@@ -143,6 +177,7 @@ router.get("/pengeluaran/:id", authMiddleware, (req, res) => {
       account_id: pengeluaranItem.account_id,
       account_code: pengeluaranItem.account_code,
       account_name: pengeluaranItem.account_name,
+      files: pengeluaranItem.files || [],
     };
 
     res.status(200).json({
@@ -170,7 +205,7 @@ router.post("/pengeluaran", authMiddleware, (req, res) => {
       account_id,
       notes,
       total_amount,
-      file,
+      files,
     } = req.body;
 
     // Validation
@@ -190,13 +225,13 @@ router.post("/pengeluaran", authMiddleware, (req, res) => {
       });
     }
 
-    // Validate date format (DD-MM-YYYY)
-    const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
+    // Validate date format (DD/MM/YYYY)
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
     if (!dateRegex.test(transaction_date)) {
       return res.status(400).json({
         code: 400,
         error: "Invalid date format",
-        message: "Date must be in DD-MM-YYYY format",
+        message: "Date must be in DD/MM/YYYY format",
       });
     }
 
@@ -250,15 +285,36 @@ router.post("/pengeluaran", authMiddleware, (req, res) => {
       });
     }
 
+    // Validate files if provided
+    let processedFiles = [];
+    if (files && Array.isArray(files)) {
+      processedFiles = files.map((file, index) => {
+        if (!file.filename || !file.original_name) {
+          throw new Error("Each file must have filename and original_name");
+        }
+        return {
+          id: `file-${Date.now()}-${index}`,
+          filename: file.filename,
+          original_name: file.original_name,
+          size: file.size || 0,
+          mime_type: file.mime_type || "application/octet-stream",
+          uploaded_at: new Date().toISOString(),
+        };
+      });
+    }
+
     // Generate new ID
     const newId = `omzet-${omzet.length + 1}`;
     const currentTimestamp = new Date().toISOString();
 
-    // Create new pengeluaran (saved as omzet with transaction_type = "Pengeluaran")
+    // Convert DD/MM/YYYY input to DD-MM-YYYY for storage
+    const storageDate = transaction_date.replace(/\//g, "-");
+
+    // Create new pengeluaran (saved as omzet with the provided transaction_type)
     const newPengeluaran = {
       id: newId,
-      transaction_date,
-      transaction_type: "Pengeluaran", // Force to Pengeluaran for consistency
+      transaction_date: storageDate,
+      transaction_type, // Use the provided transaction_type (Operasional or Bahan Baku)
       reference_no,
       branch_id,
       branch_name: branch.name,
@@ -268,7 +324,7 @@ router.post("/pengeluaran", authMiddleware, (req, res) => {
       notes: notes || "",
       total_amount,
       status: "active",
-      file: file || null,
+      files: processedFiles,
       created_at: currentTimestamp,
       updated_at: currentTimestamp,
     };
@@ -276,10 +332,16 @@ router.post("/pengeluaran", authMiddleware, (req, res) => {
     // Add to omzet array (in real app, this would be saved to database)
     omzet.push(newPengeluaran);
 
+    // Format response data with DD/MM/YYYY date format
+    const responseData = {
+      ...newPengeluaran,
+      transaction_date: newPengeluaran.transaction_date.replace(/-/g, "/"),
+    };
+
     res.status(200).json({
       code: 200,
       message: `Expense ${newId} successfully created.`,
-      data: newPengeluaran,
+      data: responseData,
     });
   } catch (error) {
     res.status(500).json({
@@ -302,7 +364,7 @@ router.patch("/pengeluaran/:id", authMiddleware, (req, res) => {
       account_id,
       notes,
       total_amount,
-      file,
+      files,
     } = req.body;
 
     // Find pengeluaran
@@ -310,7 +372,9 @@ router.patch("/pengeluaran/:id", authMiddleware, (req, res) => {
       (item) =>
         item.id === id &&
         item.status === "active" &&
-        item.transaction_type === "Pengeluaran"
+        (item.transaction_type === "Pengeluaran" ||
+          item.transaction_type === "Bahan Baku" ||
+          item.transaction_type === "Operasional")
     );
     if (omzetIndex === -1) {
       return res.status(404).json({
@@ -323,12 +387,12 @@ router.patch("/pengeluaran/:id", authMiddleware, (req, res) => {
 
     // Validate fields if provided
     if (transaction_date) {
-      const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
+      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
       if (!dateRegex.test(transaction_date)) {
         return res.status(400).json({
           code: 400,
           error: "Invalid date format",
-          message: "Date must be in DD-MM-YYYY format",
+          message: "Date must be in DD/MM/YYYY format",
         });
       }
     }
@@ -399,22 +463,54 @@ router.patch("/pengeluaran/:id", authMiddleware, (req, res) => {
       }
     }
 
+    // Process files if provided
+    if (files !== undefined) {
+      let processedFiles = [];
+      if (Array.isArray(files)) {
+        processedFiles = files.map((file, index) => {
+          if (!file.filename || !file.original_name) {
+            throw new Error("Each file must have filename and original_name");
+          }
+          return {
+            id: file.id || `file-${Date.now()}-${index}`,
+            filename: file.filename,
+            original_name: file.original_name,
+            size: file.size || 0,
+            mime_type: file.mime_type || "application/octet-stream",
+            uploaded_at: file.uploaded_at || new Date().toISOString(),
+          };
+        });
+      }
+      currentPengeluaran.files = processedFiles;
+    }
+
     // Update fields
-    if (transaction_date)
-      currentPengeluaran.transaction_date = transaction_date;
-    if (transaction_type) currentPengeluaran.transaction_type = "Pengeluaran"; // Always keep as Pengeluaran
+    if (transaction_date) {
+      // Convert DD/MM/YYYY input to DD-MM-YYYY for storage
+      currentPengeluaran.transaction_date = transaction_date.replace(
+        /\//g,
+        "-"
+      );
+    }
+    if (transaction_type)
+      currentPengeluaran.transaction_type = transaction_type; // Keep original transaction type (Operasional or Bahan Baku)
     if (reference_no) currentPengeluaran.reference_no = reference_no;
     if (notes !== undefined) currentPengeluaran.notes = notes;
     if (total_amount !== undefined)
       currentPengeluaran.total_amount = total_amount;
-    if (file !== undefined) currentPengeluaran.file = file;
 
     currentPengeluaran.updated_at = new Date().toISOString();
+
+    // Format response data with DD/MM/YYYY date format
+    const responseData = {
+      ...currentPengeluaran,
+      transaction_date: currentPengeluaran.transaction_date.replace(/-/g, "/"),
+    };
 
     res.status(200).json({
       code: 200,
       message: `Expense ${id} successfully updated.`,
-      data: currentPengeluaran,
+      data: responseData,
     });
   } catch (error) {
     res.status(500).json({
@@ -435,7 +531,8 @@ router.delete("/pengeluaran/:id", authMiddleware, (req, res) => {
       (item) =>
         item.id === id &&
         item.status === "active" &&
-        item.transaction_type === "Pengeluaran"
+        (item.transaction_type === "Bahan Baku" ||
+          item.transaction_type === "Operasional")
     );
     if (omzetIndex === -1) {
       return res.status(404).json({
@@ -451,6 +548,120 @@ router.delete("/pengeluaran/:id", authMiddleware, (req, res) => {
     res.status(200).json({
       code: 200,
       message: `Expense ${id} successfully deactivated.`,
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      error: "Internal server error",
+      message: error.message,
+    });
+  }
+});
+
+// POST /api/pengeluaran/:id/files - Add files to existing pengeluaran
+router.post("/pengeluaran/:id/files", authMiddleware, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { files } = req.body;
+
+    // Find pengeluaran
+    const omzetIndex = omzet.findIndex(
+      (item) =>
+        item.id === id &&
+        item.status === "active" &&
+        (item.transaction_type === "Bahan Baku" ||
+          item.transaction_type === "Operasional")
+    );
+    if (omzetIndex === -1) {
+      return res.status(404).json({
+        code: 404,
+        error: "Expense not found",
+      });
+    }
+
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      return res.status(400).json({
+        code: 400,
+        error: "Files array is required and cannot be empty",
+      });
+    }
+
+    // Process new files
+    const processedFiles = files.map((file, index) => {
+      if (!file.filename || !file.original_name) {
+        throw new Error("Each file must have filename and original_name");
+      }
+      return {
+        id: `file-${Date.now()}-${index}`,
+        filename: file.filename,
+        original_name: file.original_name,
+        size: file.size || 0,
+        mime_type: file.mime_type || "application/octet-stream",
+        uploaded_at: new Date().toISOString(),
+      };
+    });
+
+    // Add to existing files
+    omzet[omzetIndex].files = [
+      ...(omzet[omzetIndex].files || []),
+      ...processedFiles,
+    ];
+    omzet[omzetIndex].updated_at = new Date().toISOString();
+
+    res.status(200).json({
+      code: 200,
+      message: "Files added successfully to expense",
+      data: {
+        transaction_id: id,
+        files: omzet[omzetIndex].files,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      error: "Internal server error",
+      message: error.message,
+    });
+  }
+});
+
+// DELETE /api/pengeluaran/:id/files/:file_id - Remove file from pengeluaran
+router.delete("/pengeluaran/:id/files/:file_id", authMiddleware, (req, res) => {
+  try {
+    const { id, file_id } = req.params;
+
+    // Find pengeluaran
+    const omzetIndex = omzet.findIndex(
+      (item) =>
+        item.id === id &&
+        item.status === "active" &&
+        (item.transaction_type === "Bahan Baku" ||
+          item.transaction_type === "Operasional")
+    );
+    if (omzetIndex === -1) {
+      return res.status(404).json({
+        code: 404,
+        error: "Expense not found",
+      });
+    }
+
+    // Find and remove file
+    const fileIndex = omzet[omzetIndex].files?.findIndex(
+      (f) => f.id === file_id
+    );
+    if (fileIndex === -1 || fileIndex === undefined) {
+      return res.status(404).json({
+        code: 404,
+        error: "File not found",
+      });
+    }
+
+    omzet[omzetIndex].files.splice(fileIndex, 1);
+    omzet[omzetIndex].updated_at = new Date().toISOString();
+
+    res.status(200).json({
+      code: 200,
+      message: "File removed successfully from expense",
     });
   } catch (error) {
     res.status(500).json({
